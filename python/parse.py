@@ -14,6 +14,10 @@ Run "python3 parse.py {song name}"
     Note: You do not need to put the absolute path to the song file. Just put
     name of song file. The code will get the songs from ModLauncher/SongFiles/
 '''
+
+
+
+
 # this is the list of block info. Each element in an even index has a corresponding
 # inverse at the i + 1 index. From the block_info we can construct a python
 # dictionary mapping blocks to their inverses easily
@@ -145,18 +149,61 @@ def inverse_dict_new():
         result[inverse_block_info] = curr_block_info
     return result
 
+# prints the original dictionary from <sys.argv[1]> and our flipped dictionary
+# <sys.argv[1]>-flipped.dat
+def dbg_print_result():
+    print("Here is the original vs flipped block...")
+    with open(sys.argv[1]) as orig_json:
+        orig = json.load(orig_json)
+        with open(sys.argv[1].replace('.dat', '') + "-flipped.dat") as new_json:
+            new = json.load(new_json)
+            for i in range(len(orig['_notes'])):
+                
+                print("Original note: ", orig['_notes'][i])
+                print("Flipped note: ", new['_notes'][i], "\n")
+
+    
 
 
-
-def flip(name):
-    # print(f"Parsing {name}")
-    print(os.getcwd())
-    with open(name) as json_file:
+# 1) opens file given as second command line argument
+# 2) create a dictionary that maps blocks to their inverses
+# 3) reads the notes in file
+# 4) map blocks to their inverse 
+# 5) write result to new file called <sys.argv[1]>-flipped.dat
+def doit():
+    inv_dict = inverse_dict_new()
+    with open(sys.argv[1]) as json_file:
         f = json.load(json_file)
-        for e in f['_notes']:
-            print(e)
-        
+        li = []
+        flip_li = []
+        for n in f['_notes']: # read the argument
+            li.append(n)
 
+
+        for i in range(len(li)): # loop over notes
+            # find the inverse block
+            block = li[i] # this is a dictionary
+            info = (
+                block['_lineIndex'],
+                block['_lineLayer'],
+                block['_cutDirection']
+            )
+            flipped_info = inv_dict[info] # tuple containing flipped info
+            flipped_block = {
+                "_time": block['_time'],
+                "_lineIndex": flipped_info[0],
+                "_lineLayer": flipped_info[1], 
+                "_type": block['_type'], 
+                "_cutDirectino": flipped_info[2]
+            }
+            f['_notes'][i] = flipped_block
+            print("here is the flipped info", flipped_info)
+
+        # write out to new file
+        with open(sys.argv[1].replace('.dat', '') + "-flipped.dat", 'x') as newfile:
+            json.dump(f, newfile)
+
+        dbg_print_result()
 
 def main():
     # this file should only be run with one argument (the song file name)
@@ -166,41 +213,6 @@ def main():
 should be 'parse.py' and the second one should be the file name.");
         return
     else:
-        inv_dict = inverse_dict_new()
-        with open(sys.argv[1]) as json_file:
-            f = json.load(json_file)
-            li = []
-            flip_li = []
-            for n in f['_notes']: # read the argument
-                li.append(n)
-
-            for i in range(len(li)):
-                # find the inverse block
-                block = li[i]
-                info = (
-                    block['_lineIndex'],
-                    block['_lineLayer'],
-                    block['_cutDirection']
-                )
-                flipped_info = inv_dict[info]
-
-                print("here is the flipped info", flipped_info)
-
-                print(flipped_info[0])
-                print(flipped_info[1])
-                print(flipped_info[2])
-                print(flipped_info[2])
-                print(flipped_info[2])
-                print(flipped_info[2])
-
-            # write out to new file
-            with open(sys.argv + "-copy.dat", 'x') as newfile:
-                json.dump(f, newfile)
-
-
-    
-            
-            
-
-
+        doit()
+        
 main()
